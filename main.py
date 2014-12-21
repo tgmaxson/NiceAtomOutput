@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from png import PNG
 from texture import Texture
 
