@@ -31,6 +31,9 @@ class Texture:
                 self.depth.append([])
                 for y in range(height):
                     self.depth[-1].append(None)
+        
+        print self.width, len(self.data)
+        print self.height, len(self.data[0])
 
     def save(self, filename):
         # Initialize an array to hold the colors converted
@@ -119,8 +122,8 @@ class Texture:
     def set(self, x, y, value, depth=None):
         x0 = int(x)
         y0 = int(y)
-        if x0 < 0 or x0 > self.width or \
-           y0 < 0 or y0 > self.width:
+        if x0 < 0 or x0 >= self.width or \
+           y0 < 0 or y0 >= self.height:
             # Out of bounds
             return
         if depth is not None:
@@ -131,3 +134,69 @@ class Texture:
         self.data[x0][y0] = value
         self.depth[x0][y0] = depth
 
+    def circle(self, x0, y0, radius, color, depth=0):
+        f = 1 - radius
+        ddf_x = 1
+        ddf_y = -2 * radius
+        x = 0
+        y = radius
+        self.set(x0, y0 + radius, color, depth)
+        self.set(x0, y0 - radius, color, depth)
+        self.set(x0 + radius, y0, color, depth)
+        self.set(x0 - radius, y0, color, depth)
+ 
+        while x < y:
+            if f >= 0: 
+                y -= 1
+                ddf_y += 2
+                f += ddf_y
+            x += 1
+            ddf_x += 2
+            f += ddf_x    
+            self.set(x0 + x, y0 + y, color, depth)
+            self.set(x0 - x, y0 + y, color, depth)
+            self.set(x0 + x, y0 - y, color, depth)
+            self.set(x0 - x, y0 - y, color, depth)
+            self.set(x0 + y, y0 + x, color, depth)
+            self.set(x0 - y, y0 + x, color, depth)
+            self.set(x0 + y, y0 - x, color, depth)
+            self.set(x0 - y, y0 - x, color, depth)
+    
+    def filled_circle(self, x0, y0, radius, color, depth=0):
+        for i in range(0-radius, radius+1):
+            for ii in range(0-radius, radius+1):
+                if (i**2 + ii**2 <= radius**2):
+                    self.set(i+x0, ii+y0, color, depth)
+                    
+    def shaded_circle(self, x0, y0, radius, color, depth=0, lightdir=(0.20, -0.3, 0.9), specBoost=(128,128,128), ramp=3):
+        def Normalize(v0):
+            x, y, z = v0
+            mag = (x**2. + y**2. + z**2.)**(1./2.)
+            return (x/mag, y/mag, z/mag)
+        
+        def C2Dto3D(v0, r = 1):
+            x, y = v0
+            z = (r**2 - x**2. - y**2.)**(1./2.)
+            return Normalize((x, y, z))
+            
+        def Dot3D(v0, v1):
+            x0, y0, z0 = v0
+            x1, y1, z1 = v1
+            return float((x0*x1) + (y0*y1) + (z0*z1))
+        
+        lightVect = Normalize(lightdir)        
+        for i in range(0-radius, radius+1):
+            for ii in range(0-radius, radius+1):
+                if (i**2 + ii**2 <= radius**2):
+                    normal = C2Dto3D((i,ii), r=radius)
+                    dot = Dot3D(lightdir, normal)
+                    dot = max(dot, 0.2)
+                    sr, sg, sb = specBoost
+                    magic = 1.5
+                    spec = (int(sr * ((dot/magic)**ramp)*magic), int(sg * ((dot/magic)**ramp)*magic), int(sb * ((dot/magic)**ramp)*magic))
+                    result = (color[0], int(color[1]*dot+spec[0]), int(color[2]*dot+spec[1]), int(color[3]*dot+spec[2]))
+                    self.set(i+x0, ii+y0, result, depth-normal[2])
+
+    def outlined_circle(self, x0, y0, radius, color, width=1, color2=(255, 0, 0, 0), depth=0, ramp=3):
+        self.filled_circle(x0, y0, radius, color2, depth=depth)
+        self.shaded_circle(x0, y0, radius-width, color, depth=depth, ramp=ramp)

@@ -18,6 +18,7 @@ def write_png(buf, width, height):
         png_pack(b'IEND', b'')])
 
 def PNG(array, filename):
+    array = [list(x) for x  in zip(*array)]
     if any([len(row) != len(array[0]) for row in array]):
         raise ValueError, "Array should have elements of equal size"
 

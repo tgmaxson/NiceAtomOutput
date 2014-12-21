@@ -21,18 +21,10 @@ from texture import Texture
 #        /,_|  |   /,_/   /
 #           /,_/      '`-'
 
-Tex = Texture(10, 10)
-for i in range(10):
- for ii in range(10):
-  Tex.set(i, ii, (255, 0, 0, 0), depth = i)
+Tex = Texture(1000, 100)
 
-for i in range(10):
- for ii in range(10):
-  Tex.set(i, ii, (255, 255, 255, 255), depth = ii)
-
-for i in range(4,6):
- for ii in range(4,6):
-  Tex[i, ii] = (255, 255, 0, 0)
+for i in range(20):
+    Tex.outlined_circle(50 + (i*50), 50, 50, (255, 255, 0, 0), depth = i)
 
 Tex.save("test.png")
 Tex.saveDepth("depth.png")
