@@ -134,6 +134,15 @@ class Texture:
         self.data[x0][y0] = value
         self.depth[x0][y0] = depth
 
+    def get_depth(self, x, y):
+        x0 = int(x)
+        y0 = int(y)
+        if x0 < 0 or x0 >= self.width or \
+           y0 < 0 or y0 >= self.height:
+            # Out of bounds
+            return -1e99
+        return self.depth[x0][y0]
+
     def circle(self, x0, y0, radius, color, depth=0):
         f = 1 - radius
         ddf_x = 1
@@ -168,7 +177,7 @@ class Texture:
                 if (i**2 + ii**2 <= radius**2):
                     self.set(i+x0, ii+y0, color, depth)
                     
-    def shaded_circle(self, x0, y0, radius, color, depth=0, lightdir=(0.20, -0.3, 0.9), specBoost=(128,128,128), ramp=3):
+    def shaded_circle(self, x0, y0, radius, color, depth=0, lightdir=(0.20, -0.3, 0.9), specBoost=(255,255,255), ramp=5):
         def Normalize(v0):
             x, y, z = v0
             mag = (x**2. + y**2. + z**2.)**(1./2.)
@@ -190,13 +199,13 @@ class Texture:
                 if (i**2 + ii**2 <= radius**2):
                     normal = C2Dto3D((i,ii), r=radius)
                     dot = Dot3D(lightdir, normal)
-                    dot = max(dot, 0.2)
+                    dot = max(dot, 0.45)
+                    specDot = min((dot/1.2) ** ramp, 1)
                     sr, sg, sb = specBoost
-                    magic = 1.5
-                    spec = (int(sr * ((dot/magic)**ramp)*magic), int(sg * ((dot/magic)**ramp)*magic), int(sb * ((dot/magic)**ramp)*magic))
+                    spec = (int(sr * specDot), int(sg * specDot), int(sb * specDot))
                     result = (color[0], int(color[1]*dot+spec[0]), int(color[2]*dot+spec[1]), int(color[3]*dot+spec[2]))
                     self.set(i+x0, ii+y0, result, depth-normal[2])
 
-    def outlined_circle(self, x0, y0, radius, color, width=1, color2=(255, 0, 0, 0), depth=0, ramp=3):
+    def outlined_circle(self, x0, y0, radius, color, width=1, color2=(255, 0, 0, 0), depth=0, ramp=5):
         self.filled_circle(x0, y0, radius, color2, depth=depth)
         self.shaded_circle(x0, y0, radius-width, color, depth=depth, ramp=ramp)

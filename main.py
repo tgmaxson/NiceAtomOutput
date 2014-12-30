@@ -22,10 +22,31 @@ from texture import Texture
 #        /,_|  |   /,_/   /
 #           /,_/      '`-'
 
-Tex = Texture(1000, 100)
+from ase.io import read
+from ase.data import covalent_radii as cr
+from ase.data.colors import jmol_colors as colors_us
+import numpy as np
+a = read("POSCAR")
 
-for i in range(20):
-    Tex.outlined_circle(50 + (i*50), 50, 50, (255, 255, 0, 0), depth = i)
+zoom = 30
+x, y, z = a.get_cell()
+Tex = Texture(int(x[0]*zoom), int(y[1]*zoom))
+
+colors = []
+for col in colors_us:
+    r, g, b = col
+    color = (255, int(r*255), int(g*255), int(b*255))
+    colors.append(color)
+
+for x, atom in enumerate(a):
+    print x
+    num = atom.number
+    color = colors[num]
+    radius = int(cr[num] * zoom)
+    x = atom.position[0]*zoom
+    y = atom.position[1]*zoom
+    depth = -atom.position[2]*zoom
+    Tex.outlined_circle(x, y, radius, color, depth = depth)
 
 Tex.save("test.png")
 Tex.saveDepth("depth.png")
